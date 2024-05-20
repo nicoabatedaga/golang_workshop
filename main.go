@@ -1,27 +1,33 @@
 package main
 
 import (
-	"fmt"
-	"github.com/nicoabatedaga/golang_workshop_using_library/models"
+	"github.com/pkg/profile"
 	"time"
 )
 
 func main() {
+	defer profile.Start(profile.ProfilePath(".")).Stop()
 
-	people := []*models.Person{
-		models.NewPerson("John", 1, time.January, 2000),
-		models.NewPerson("Nico", 1, time.January, 2010),
-		models.NewPerson("Jane", 1, time.January, 1990),
-		models.NewPerson("Alice", 1, time.January, 1980),
+	c := make(chan int)
+
+	go fibonacci(c)
+	go func() {
+		time.Sleep(5 * time.Second)
+		close(c)
+	}()
+
+	for i := range c {
+		println(i)
 	}
 
-	for _, p := range people {
-		fmt.Println(p.Presentation())
-		if p.IsAdult() {
-			fmt.Println("I'm an adult")
-		} else {
-			fmt.Println("I'm not an adult")
-		}
-	}
+}
 
+func fibonacci(c chan int) {
+	x, y := 0, 1
+	for {
+		c <- x
+		x, y = y, x+y
+		// wait
+		time.Sleep(500 * time.Millisecond)
+	}
 }
