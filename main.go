@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/nicoabatedaga/golang_workshop/models"
+	"github.com/nicoabatedaga/golang_workshop_using_library/models"
 	"time"
 )
 
