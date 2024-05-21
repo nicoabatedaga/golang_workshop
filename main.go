@@ -1,82 +1,42 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"math/rand"
-	"sync"
 	"time"
 )
 
-var times map[int]time.Duration
-
-const calls = 4
-
 func main() {
-	times = make(map[int]time.Duration, calls)
-	for i := 0; i < calls; i++ {
-		times[i] = time.Duration(rand.Intn(5)) * time.Second
-	}
-	println(fmt.Sprintf("Times: %#v", times))
-
-	firstApproach()
-	secondApproach()
-	thirdApproach()
-
-}
-
-func doHttpCall(i int) string {
-	time.Sleep(times[i])
-	return fmt.Sprintf("Ok - Call %d", i)
-}
-
-func firstApproach() {
-	println("First approach")
-	startTime := time.Now()
-
-	for i := 0; i < calls; i++ {
-		println(doHttpCall(i))
-	}
-
-	endTime := time.Now()
-
-	fmt.Println("Total time first approach: ", endTime.Sub(startTime))
-}
-
-func secondApproach() {
-	println("Second approach")
-	startTime := time.Now()
-
-	wg := sync.WaitGroup{}
-	for i := 0; i < calls; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			println(doHttpCall(i))
-		}(i)
-	}
-	wg.Wait()
-
-	endTime := time.Now()
-
-	fmt.Println("Total time second approach: ", endTime.Sub(startTime))
-}
-
-func thirdApproach() {
-	println("Third approach")
-	startTime := time.Now()
+	ctx, cancel := context.WithCancel(context.Background())
+	// ctx, cancel := context.WithTimeout(context.Background(), 2600*time.Millisecond)
+	// ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(3*time.Second))
 
 	result := make(chan string)
-	for i := 0; i < calls; i++ {
-		go func(i int) {
-			result <- doHttpCall(i)
-		}(i)
+
+	startTime := time.Now()
+
+	go doHttpCall(ctx, result, 1, 3)
+	go doHttpCall(ctx, result, 2, 2)
+	go doHttpCall(ctx, result, 3, 1)
+	go doHttpCall(ctx, result, 4, 6)
+	msg := <-result
+	cancel()
+
+	elapsed := time.Since(startTime)
+	fmt.Println("Total time: ", elapsed)
+	fmt.Println("Message: ", msg)
+
+	time.Sleep(10 * time.Second)
+	// cancel()
+}
+
+func doHttpCall(ctx context.Context, result chan string, process int, seconds int) {
+	start := time.Now()
+	select {
+	case <-ctx.Done():
+		fmt.Println(fmt.Sprintf("Process %d cancelled, elapsed time: %v", process, time.Since(start)))
+	case <-time.After(time.Duration(seconds) * time.Second):
+		println(fmt.Sprintf("Process %d finished, elapsed time: %v", process, time.Since(start)))
+		result <- fmt.Sprintf("Finished process %d", process)
 	}
-
-	for i := 0; i < calls; i++ {
-		println(<-result)
-	}
-
-	endTime := time.Now()
-
-	fmt.Println("Total time third approach: ", endTime.Sub(startTime))
 }
