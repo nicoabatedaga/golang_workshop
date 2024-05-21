@@ -2,60 +2,81 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/profile"
-	_ "net/http/pprof"
+	"math/rand"
 	"sync"
 	"time"
 )
 
+var times map[int]time.Duration
+
+const calls = 4
+
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from panic", r)
-		}
-	}()
-	defer profile.Start(profile.ProfilePath(".")).Stop()
-
-	c := make(chan int)
-	var m sync.Mutex
-	x, y := 0, 1
-
-	go fibonacci(c, &x, &y, 1, &m)
-	go fibonacci(c, &x, &y, 2, &m)
-
-	go func() {
-		time.Sleep(5 * time.Second)
-		close(c)
-	}()
-
-	for i := range c {
-		println(i)
+	times = make(map[int]time.Duration, calls)
+	for i := 0; i < calls; i++ {
+		times[i] = time.Duration(rand.Intn(5)) * time.Second
 	}
+	println(fmt.Sprintf("Times: %#v", times))
+
+	firstApproach()
+	secondApproach()
+	thirdApproach()
 
 }
 
-func fibonacci(c chan int, x, y *int, processID int, m *sync.Mutex) {
-	for {
-		m.Lock()
-		if IsClosed(c) {
-			m.Unlock()
-			break
-		}
-		println(fmt.Sprintf("Process %d -> %d", processID, *x))
-		c <- *x
-		*x, *y = *y, *x+*y
-		m.Unlock()
-		// wait
-		time.Sleep(500 * time.Millisecond)
-	}
+func doHttpCall(i int) string {
+	time.Sleep(times[i])
+	return fmt.Sprintf("Ok - Call %d", i)
 }
 
-func IsClosed(ch <-chan int) bool {
-	select {
-	case <-ch:
-		return true
-	default:
+func firstApproach() {
+	println("First approach")
+	startTime := time.Now()
+
+	for i := 0; i < calls; i++ {
+		println(doHttpCall(i))
 	}
 
-	return false
+	endTime := time.Now()
+
+	fmt.Println("Total time first approach: ", endTime.Sub(startTime))
+}
+
+func secondApproach() {
+	println("Second approach")
+	startTime := time.Now()
+
+	wg := sync.WaitGroup{}
+	for i := 0; i < calls; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			println(doHttpCall(i))
+		}(i)
+	}
+	wg.Wait()
+
+	endTime := time.Now()
+
+	fmt.Println("Total time second approach: ", endTime.Sub(startTime))
+}
+
+func thirdApproach() {
+	println("Third approach")
+	startTime := time.Now()
+
+	result := make(chan string)
+	for i := 0; i < calls; i++ {
+		go func(i int) {
+			result <- doHttpCall(i)
+		}(i)
+	}
+
+	for i := 0; i < calls; i++ {
+		println(<-result)
+	}
+
+	endTime := time.Now()
+
+	fmt.Println("Total time third approach: ", endTime.Sub(startTime))
 }
