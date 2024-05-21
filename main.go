@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/profile"
+	_ "net/http/pprof"
 	"sync"
 	"time"
 )
 
 func main() {
-	// defer profile.Start(profile.ProfilePath(".")).Stop()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic", r)
+		}
+	}()
+	defer profile.Start(profile.ProfilePath(".")).Stop()
 
 	c := make(chan int)
 	var m sync.Mutex
