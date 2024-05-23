@@ -2,41 +2,77 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"time"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+
+	// Graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
-	// ctx, cancel := context.WithTimeout(context.Background(), 2600*time.Millisecond)
-	// ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(3*time.Second))
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		println("Shutting down...")
+		cancel()
+		os.Exit(1)
+	}()
 
-	result := make(chan string)
+	// Start servers
+	go standarLibraryApiRest()
+	go muxApiRest()
+	go echoApiRest()
+	go ginApiRest()
 
-	startTime := time.Now()
-
-	go doHttpCall(ctx, result, 1, 3)
-	go doHttpCall(ctx, result, 2, 2)
-	go doHttpCall(ctx, result, 3, 1)
-	go doHttpCall(ctx, result, 4, 6)
-	msg := <-result
-	cancel()
-
-	elapsed := time.Since(startTime)
-	fmt.Println("Total time: ", elapsed)
-	fmt.Println("Message: ", msg)
-
-	time.Sleep(10 * time.Second)
-	// cancel()
+	// Wait for shutdown
+	<-ctx.Done()
 }
 
-func doHttpCall(ctx context.Context, result chan string, process int, seconds int) {
-	start := time.Now()
-	select {
-	case <-ctx.Done():
-		fmt.Println(fmt.Sprintf("Process %d cancelled, elapsed time: %v", process, time.Since(start)))
-	case <-time.After(time.Duration(seconds) * time.Second):
-		println(fmt.Sprintf("Process %d finished, elapsed time: %v", process, time.Since(start)))
-		result <- fmt.Sprintf("Finished process %d", process)
-	}
+func standarLibraryApiRest() {
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "Response from standar library"}`))
+	})
+	http.ListenAndServe(":8080", nil)
+}
+
+func muxApiRest() {
+	r := mux.NewRouter()
+	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "Response from mux"}`))
+	}).Methods("GET")
+
+	http.ListenAndServe(":8081", r)
+}
+
+func echoApiRest() {
+	e := echo.New()
+	e.GET("/test", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"message": "Response from echo"})
+	})
+	e.Logger.Info(e.Start(":8082"))
+}
+
+func ginApiRest() {
+	r := gin.Default()
+	r.Handle("GET", "/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Response from gin",
+		})
+	})
+	r.POST("/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Response from gin",
+		})
+	})
+	r.Run(":8083")
 }
