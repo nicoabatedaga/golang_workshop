@@ -1,7 +1,9 @@
 package storage
 
+import "context"
+
 type StorageInterface interface {
-	Get(partition, key string) ([]byte, error)
-	Save(partition, key string, value []byte) error
-	Delete(partition, key string) error
+	Get(ctx context.Context, partition, key string) ([]byte, error)
+	Save(ctx context.Context, partition, key string, value []byte) error
+	Delete(ctx context.Context, partition, key string) error
 }

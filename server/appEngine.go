@@ -14,8 +14,9 @@ func init() {
 	r.Use(
 		gin.Recovery(),
 	)
-	memcache := storage.NewStorageMemcached()
-	userService := services.NewUserService(memcache)
+	// memcache := storage.NewStorageMemcached()
+	redis := storage.NewStorageRedis()
+	userService := services.NewUserService(redis)
 	userHandler := handlers.NewUserHandler(userService)
 	createRoutes(userHandler)
 }

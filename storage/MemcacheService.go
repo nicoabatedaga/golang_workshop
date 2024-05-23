@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
 )
@@ -16,7 +17,7 @@ func NewStorageMemcached() StorageInterface {
 	}
 }
 
-func (s *MemcachedImp) Get(partition, key string) ([]byte, error) {
+func (s *MemcachedImp) Get(ctx context.Context, partition, key string) ([]byte, error) {
 	get, err := s.client.Get(fmt.Sprintf("%s-%s", partition, key))
 	if err != nil {
 		return nil, err
@@ -24,7 +25,7 @@ func (s *MemcachedImp) Get(partition, key string) ([]byte, error) {
 	return get.Value, nil
 }
 
-func (s *MemcachedImp) Save(partition, key string, value []byte) error {
+func (s *MemcachedImp) Save(ctx context.Context, partition, key string, value []byte) error {
 	err := s.client.Add(
 		&memcache.Item{
 			Key:   fmt.Sprintf("%s-%s", partition, key),
@@ -36,7 +37,7 @@ func (s *MemcachedImp) Save(partition, key string, value []byte) error {
 	return nil
 }
 
-func (s *MemcachedImp) Delete(partition, key string) error {
+func (s *MemcachedImp) Delete(ctx context.Context, partition, key string) error {
 	err := s.client.Delete(fmt.Sprintf("%s-%s", partition, key))
 	if err != nil {
 		return err

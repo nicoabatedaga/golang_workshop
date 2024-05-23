@@ -22,6 +22,7 @@ type UserHandlerImp struct {
 }
 
 func (u *UserHandlerImp) GetUserHandler(c *gin.Context) {
+	ctx := c.Request.Context()
 	id := c.Param("id")
 	if id == "" {
 		c.JSON(400, gin.H{
@@ -30,7 +31,7 @@ func (u *UserHandlerImp) GetUserHandler(c *gin.Context) {
 		return
 
 	}
-	user, err := u.userService.GetUser(id)
+	user, err := u.userService.GetUser(ctx, id)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "Internal Server Error",
@@ -42,6 +43,7 @@ func (u *UserHandlerImp) GetUserHandler(c *gin.Context) {
 }
 
 func (u *UserHandlerImp) PostUserHandler(c *gin.Context) {
+	ctx := c.Request.Context()
 	var user models.User
 	err := c.BindJSON(&user)
 	if err != nil {
@@ -50,7 +52,7 @@ func (u *UserHandlerImp) PostUserHandler(c *gin.Context) {
 		})
 		return
 	}
-	postUser, err := u.userService.PostUser(user)
+	postUser, err := u.userService.PostUser(ctx, user)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "Internal Server Error",

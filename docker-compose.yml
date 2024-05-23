@@ -1,10 +1,17 @@
-# this docker compose will run a memcached used like storage
+# this docker compose will run memcached and redis used like storage
 version: '3.1'
 
 services:
   memcached:
-    image: memcached:1.6.27
+    image: memcached:latest
     container_name: memcached
     ports:
       - "11211:11211"
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
     restart: always
