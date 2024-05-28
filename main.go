@@ -1,22 +1,27 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
 
 func main() {
+	_, cancel := context.WithCancel(context.Background())
+
 	c1 := make(chan string)
 	c2 := make(chan string)
 
 	go func() {
 		time.Sleep(1 * time.Second)
 		c1 <- "uno"
+		cancel()
 	}()
 
 	go func() {
 		time.Sleep(2 * time.Second)
 		c2 <- "dos"
+		cancel()
 	}()
 
 	for i := 0; i < 2; i++ {
@@ -25,6 +30,9 @@ func main() {
 			fmt.Println("Recibido", msg1)
 		case msg2 := <-c2:
 			fmt.Println("Recibido", msg2)
+			/*case <-ctx.Done():
+			fmt.Println("Terminado")
+			return*/
 		}
 	}
 }
