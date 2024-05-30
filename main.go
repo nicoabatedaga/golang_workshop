@@ -84,6 +84,8 @@ func thirdApproach() {
 		println(<-result)
 	}
 
+	close(result)
+
 	endTime := time.Now()
 
 	fmt.Println("Total time third approach: ", endTime.Sub(startTime))
