@@ -12,6 +12,14 @@ var times map[int]time.Duration
 const calls = 4
 
 func main() {
+
+	go func() {
+		for {
+			println("Running")
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
 	times = make(map[int]time.Duration, calls)
 	for i := 0; i < calls; i++ {
 		times[i] = time.Duration(rand.Intn(5)) * time.Second
