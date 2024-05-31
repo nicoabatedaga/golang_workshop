@@ -22,8 +22,8 @@ type UserServiceImp struct {
 
 func NewUserService(storage storage.StorageInterface) UserService {
 	return &UserServiceImp{
-		storage,
-		"users",
+		storage:   storage,
+		partition: "users",
 	}
 }
 

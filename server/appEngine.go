@@ -11,9 +11,8 @@ var r *gin.Engine
 
 func init() {
 	r = gin.Default()
-	r.Use(
-		gin.Recovery(),
-	)
+	r.Use(gin.Recovery())
+
 	// memcache := storage.NewStorageMemcached()
 	redis := storage.NewStorageRedis()
 	userService := services.NewUserService(redis)
